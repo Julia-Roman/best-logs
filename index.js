@@ -396,7 +396,7 @@ app.get('/namehistory/:user', async (req, res) => {
 		const result = await utils.getNameHistory(user);
 
 		if (!Array.isArray(result)) {
-			res.status(500);
+			res.status(200);
 			res.contentType('text/plain');
 			res.setHeader('X-Source', JSON.stringify(result.sourceInstances || []));
 			return res.send(result.nameHistory);
