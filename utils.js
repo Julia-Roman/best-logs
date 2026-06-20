@@ -486,17 +486,18 @@ export class Utils {
 		limit = Number(limit) || 1000;
 		let recentMessages = [];
 		let messages = [];
+		let instance = [];
 
 		let statusMessage;
+		let rmInstance;
 		let errorCode;
-		let instance;
 		let status;
 		let error;
 
 		for (const entry of instances) {
 			const { body, statusCode } = await this.fetchMessages(entry, channel, searchParams);
 			statusMessage = body?.status_message;
-			instance = `https://${entry}`;
+			rmInstance = `https://${entry}`;
 			status = statusCode || 500;
 
 			if (statusCode === 200 && body.messages.length) {
@@ -514,6 +515,8 @@ export class Utils {
 				console.error(`[${entry}] Channel: ${channel} | ${status} - ${error}`);
 			}
 		}
+
+		instance.push(rmInstance);
 
 		const firstTs = messages[0]?.match(this.tmiSentRegex)?.[1] || null;
 
@@ -568,8 +571,8 @@ export class Utils {
 							console.log(`[${instanceLink.replace('https://', '')}] Channel: ${channel} | 200 - ${logsMessages.length} messages`);
 
 							if (logsMessages?.length >= messages.length) {
+								instance.push(instanceLink);
 								messages = logsMessages;
-								instance = instanceLink;
 								errorCode = null;
 								success = true;
 								status = 200;
@@ -641,6 +644,7 @@ export class Utils {
 			}
 		}
 
+		let sourceInstances = [];
 		let nameHistory = [];
 
 		const nameHistoryInstances = Object.keys(this.config.justlogsInstances).filter(
@@ -662,6 +666,10 @@ export class Utils {
 					if (historyData.statusCode !== 200 || !Array.isArray(historyData.body)) return;
 
 					console.log(`[${url}] Found ${historyData.body.length} registered usernames for ID ${user}`);
+
+					if (historyData.body.length > 0) {
+						sourceInstances.push(`https://${instanceURL}`);
+					}
 
 					for (const newEntry of historyData.body) {
 						const existingEntry = nameHistory.find((entry) => entry.user_login === newEntry.user_login);
@@ -687,7 +695,10 @@ export class Utils {
 
 		console.log(`- [NameHistory] Found ${nameHistory.length} unique usernames for ID ${user}`);
 
-		return nameHistory;
+		return {
+			sourceInstances,
+			nameHistory,
+		};
 	}
 
 	async getInfo(user) {

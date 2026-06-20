@@ -211,6 +211,7 @@ app.get('/api/:channel', async (req, res) => {
 		if (isPlain) {
 			res.status(instances?.status || 400);
 			res.contentType('text/plain');
+			res.setHeader('X-Source', JSON.stringify(instances?.channelLogs?.instances || []));
 			return res.send(instances?.channelLogs?.fullLink[0] ?? instances?.error);
 		} else {
 			res.status(instances?.status || 400);
@@ -249,7 +250,8 @@ app.get('/api/:channel/:user', async (req, res) => {
 		if (isPlain) {
 			res.status(instances?.status || 400);
 			res.contentType('text/plain');
-			res.send(instances?.userLogs?.fullLink[0] ?? instances?.error);
+			res.setHeader('X-Source', JSON.stringify(instances?.userLogs?.instances || instances?.channelLogs?.instances || []));
+			return res.send(instances?.userLogs?.fullLink[0] ?? instances?.error);
 		} else {
 			res.status(instances?.status || 400);
 			return res.json(instances);
@@ -366,6 +368,7 @@ const logsApi = async (req, res) => {
 			} else {
 				res.status(statusCode);
 				res.contentType(headers['content-type']);
+				res.setHeader('X-Source', JSON.stringify(data.userLogs.instances || data.channelLogs.instances || []));
 				return res.send(body);
 			}
 		}
@@ -395,7 +398,8 @@ app.get('/namehistory/:user', async (req, res) => {
 		if (!Array.isArray(result)) {
 			res.status(500);
 			res.contentType('text/plain');
-			return res.send(result);
+			res.setHeader('X-Source', JSON.stringify(result.sourceInstances || []));
+			return res.send(result.nameHistory);
 		}
 
 		res.json(result);
@@ -416,6 +420,7 @@ const getRecentMessages = async (req, res) => {
 		const recentMessages = await utils.getRecentMessages(channel, req.query);
 
 		res.status(recentMessages.status || 400);
+		res.setHeader('X-Source', JSON.stringify(recentMessages.instance || []));
 		return res.json(recentMessages);
 	} catch (err) {
 		res.status(500);
